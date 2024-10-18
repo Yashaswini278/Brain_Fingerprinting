@@ -63,7 +63,7 @@ residual_sample = fc_task_residual[0, :, :].numpy()  # Get residual output
 refined_sample = fc_task_refined[0, :, :].numpy()  # Get refined output
 
 # Create a figure to display the original and reconstructed samples
-plt.figure(figsize=(16, 4))
+plt.figure(figsize=(16, 6))
 
 # Plot original sample
 plt.subplot(1, 4, 1)
