@@ -16,7 +16,7 @@ parser.add_argument('-model', type=str, help="model to train")
 args = parser.parse_args()
 
 # Load data
-data = np.load(r'.\FC_DATA\fc_rest.npy')
+data = np.load(r'FC_DATA/fc_rest.npy')
 data = data[:, np.newaxis, :, :]  # Reshape to (339, 1, 360, 360)
 
 # Convert to PyTorch tensors
@@ -84,6 +84,7 @@ for epoch in range(num_epochs):
     with torch.no_grad():  # No gradient calculation during validation
         for val_data in val_loader:
             val_inputs, _ = val_data
+            val_inputs = val_inputs.to(device)
             val_outputs = model(val_inputs)
             val_loss = criterion(val_outputs, val_inputs)  # Compare reconstructed output with the input
             running_val_loss += val_loss.item()
