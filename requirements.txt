@@ -1,3 +1,4 @@
 nilearn
 seaborn 
 tqdm
+torch
