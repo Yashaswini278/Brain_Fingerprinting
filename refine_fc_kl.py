@@ -58,7 +58,7 @@ def calculate_correlation(fc_task_data, fc_rest_data):
 accuracy_matrix = np.zeros((14, 14))  # For K=2 to 15, and L ranging from K to 15
 
 # Loop over K and L, apply SDL, and compute accuracies
-for K in range(12, 16):
+for K in range(2, 16):
     for L in range(2, K + 1):
         # Apply SDL
         print(f'K= {K}, L = {L}')
