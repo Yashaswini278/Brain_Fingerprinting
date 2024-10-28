@@ -6,7 +6,7 @@ import seaborn as sns
 accuracy_matrix = np.zeros((14, 14))  # K=2 to 15, L=2 to 15
 
 # Read the log file
-with open('accuracy_log_motor.txt', 'r') as file:
+with open('accuracy_log_wm_avg.txt', 'r') as file:
     for line in file:
         # Split the line into parts
         parts = [part.strip(' ,=') for part in line.strip().split() if part.strip(' ,=')]
@@ -30,5 +30,5 @@ sns.heatmap(accuracy_matrix, annot=True, fmt=".2f", cmap=cmap, norm=norm,
 plt.xlabel('L')
 plt.ylabel('K')
 plt.title('Accuracy Heatmap (K=2 to 15, L=2 to K)')
-plt.savefig('results/acc_kl_motor.png')  # Save the figure
+plt.savefig('results/acc_kl_wm_avg.png')  # Save the figure
 plt.show()  # Show the plot

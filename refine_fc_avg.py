@@ -86,24 +86,18 @@ plt.close()
 
 print(f'Figure saved as "results/{args.task}_avg_fcs.png".')
 
-# Load rest data for comparison
-fc_rest = np.load('FC_DATA/fc_rest.npy')
-
-fc_rest_tensor = torch.tensor(fc_rest, dtype=torch.float32)
-fc_task_tensor = torch.tensor(fc_task, dtype=torch.float32)
-
 # Correlation analysis between task and rest FC before and after processing
 # Load rest data for comparison
 fc_rest = np.load('FC_DATA/fc_rest.npy')
 
 # Correlation analysis between task and rest FC before and after processing
-corr_task_rest_before_convae = np.corrcoef(
+corr_task_rest_before_avg = np.corrcoef(
     fc_task.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
     fc_rest.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
     rowvar=True
 )[:N_SUBJECTS, N_SUBJECTS:]
 
-corr_task_rest_after_convae = np.corrcoef(
+corr_task_rest_after_avg = np.corrcoef(
     fc_task_residual.reshape(N_SUBJECTS, -1),  # Reshape to 2D
     fc_rest.reshape(N_SUBJECTS, -1),  # Reshape to 2D
     rowvar=True
@@ -119,11 +113,11 @@ corr_task_rest_after_sdl = np.corrcoef(
 plt.figure(figsize=(24, 6))
 
 plt.subplot(1, 3, 1)
-sns.heatmap(corr_task_rest_before_convae, annot=False, cmap="coolwarm", cbar=True)
+sns.heatmap(corr_task_rest_before_avg, annot=False, cmap="coolwarm", cbar=True)
 plt.title(f"Correlation Matrix - {args.task.capitalize()} vs Rest (Before Average)")
 
 plt.subplot(1, 3, 2)
-sns.heatmap(corr_task_rest_after_convae, annot=False, cmap="coolwarm", cbar=True)
+sns.heatmap(corr_task_rest_after_avg, annot=False, cmap="coolwarm", cbar=True)
 plt.title(f"Correlation Matrix - {args.task.capitalize()} vs Rest (After Average)")
 
 plt.subplot(1, 3, 3)
