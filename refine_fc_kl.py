@@ -9,13 +9,14 @@ from sdl import *
 from parser import *
 from utils import *
 
-# Argument parsing for selecting the task
+# Argument parsing for selecting the data and task
 parser = argparse.ArgumentParser(description='Functional Connectome Task Selection')
-parser.add_argument('-task', type=str, required=True, choices=['motor', 'wm', 'emotion'], help="Task to analyze: motor, wm, or emotion")
+parser.add_argument('-data', type=str, required=True, choices=['rest', 'motor', 'wm', 'emotion'], help="Data on which the model was trained: rest, motor, wm, or emotion")
+parser.add_argument('-task', type=str, required=True, choices=['rest', 'motor', 'wm', 'emotion'], help="Task to analyze: rest, motor, wm, or emotion")
 args = parser.parse_args()
 
 # Set up logging
-logging.basicConfig(filename=f'accuracy_log_{args.task}.txt', level=logging.INFO, format='%(message)s', filemode='a')
+logging.basicConfig(filename=f'accuracy_log_{args.data}_to_{args.task}.txt', level=logging.INFO, format='%(message)s', filemode='a')
 
 # Basic parameters
 basic_parameters = parse_basic_params()
@@ -23,19 +24,13 @@ HCP_DIR = basic_parameters['HCP_DIR']
 N_SUBJECTS = basic_parameters['N_SUBJECTS']
 N_PARCELS = basic_parameters['N_PARCELS']
 
-# Load the trained model
+# Load the trained model based on the training data
 model = ConvAutoencoder()
-model.load_state_dict(torch.load('./models/trained/conv_ae_best_model.pth'))
+model.load_state_dict(torch.load(f'./models/trained/conv_ae_{args.data}_best_model.pth'))
 model.eval()
 
-# Select the appropriate functional connectome (FC) data based on the task
-if args.task == 'motor':
-    fc_task = np.load('FC_DATA/fc_motor.npy')
-elif args.task == 'wm':
-    fc_task = np.load('FC_DATA/fc_wm.npy')
-elif args.task == 'emotion':
-    fc_task = np.load('FC_DATA/fc_emotion.npy')
-
+# Select the appropriate functional connectome (FC) data based on the testing task
+fc_task = np.load(f'FC_DATA/fc_{args.task}.npy')
 fc_task = fc_task[:, np.newaxis, :, :]
 fc_task_tensor = torch.tensor(fc_task, dtype=torch.float32)
 
@@ -46,19 +41,20 @@ with torch.no_grad():
 # Calculate the residuals
 fc_task_residual = fc_task_tensor.squeeze(1) - fc_task_reconstr.squeeze(1)
 
-# Load rest data for comparison
-fc_rest = np.load('FC_DATA/fc_rest.npy')
-fc_rest_tensor = torch.tensor(fc_rest, dtype=torch.float32)
+# Load train data for comparison
+fc_train = np.load(f'FC_DATA/fc_{args.data}.npy')
+fc_train_tensor = torch.tensor(fc_train, dtype=torch.float32)
+
 
 # Correlation analysis function
-def calculate_correlation(fc_task_data, fc_rest_data):
-    return np.corrcoef(fc_task_data.view(N_SUBJECTS, -1).numpy(), fc_rest_data.view(N_SUBJECTS, -1).numpy(), rowvar=True)[:N_SUBJECTS, N_SUBJECTS:]
+def calculate_correlation(fc_task_data, fc_train_data):
+    return np.corrcoef(fc_task_data.view(N_SUBJECTS, -1).numpy(), fc_train_data.view(N_SUBJECTS, -1).numpy(), rowvar=True)[:N_SUBJECTS, N_SUBJECTS:]
 
 # Initialize arrays for storing accuracies
 accuracy_matrix = np.zeros((14, 14))  # For K=2 to 15, and L ranging from K to 15
 
 # Loop over K and L, apply SDL, and compute accuracies
-for K in range(12, 16):
+for K in range(15, 16):
     for L in range(2, K + 1):
         # Apply SDL
         print(f'K= {K}, L = {L}')
@@ -76,7 +72,7 @@ for K in range(12, 16):
         fc_task_refined = fc_task_residual - DX
 
         # Correlation analysis between task and rest FC after SDL
-        corr_task_rest_after_sdl = calculate_correlation(fc_task_refined, fc_rest_tensor)
+        corr_task_rest_after_sdl = calculate_correlation(fc_task_refined, fc_train_tensor)
 
         # Calculate accuracy after SDL
         accuracy_after_sdl = calculate_accuracy(corr_task_rest_after_sdl) * 100  # Convert to percentage
