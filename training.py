@@ -10,13 +10,21 @@ from models.conv_ae import ConvAutoencoder
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Argument parsing for model selection
+# Argument parsing for model selection and dataset choice
 parser = argparse.ArgumentParser(description='Training parameters')
-parser.add_argument('-model', type=str, help="model to train") 
+parser.add_argument('-model', type=str, required=True, help="Model to train")
+parser.add_argument('-data', type=str, choices=['rest', 'wm', 'emotion', 'motor'], required=True, help="Dataset to train on")
 args = parser.parse_args()
 
-# Load data
-data = np.load(r'FC_DATA/fc_rest.npy')
+# Load the specified dataset
+data_paths = {
+    'rest': 'FC_DATA/fc_rest.npy',
+    'wm': 'FC_DATA/fc_wm.npy',
+    'emotion': 'FC_DATA/fc_emotion.npy',
+    'motor': 'FC_DATA/fc_motor.npy'
+}
+
+data = np.load(data_paths[args.data])
 data = data[:, np.newaxis, :, :]  # Reshape to (339, 1, 360, 360)
 
 # Convert to PyTorch tensors
@@ -42,64 +50,49 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # Training loop
 num_epochs = 20
-
-# Lists to store loss values
 train_losses = []
 val_losses = []
-
-# Initialize variable to keep track of the best validation loss
 best_val_loss = float('inf')
-best_model_path = f'./models/trained/{args.model}_best_model.pth'
+best_model_path = f'./models/trained/{args.model}_{args.data}_best_model.pth'
 
 for epoch in range(num_epochs):
-    model.train()  # Set model to training mode
+    model.train()
     running_train_loss = 0.0
     
     for data in train_loader:
         inputs, _ = data
         inputs = inputs.to(device)
 
-        # Zero the parameter gradients
         optimizer.zero_grad()
-
-        # Forward pass
         outputs = model(inputs)
-        loss = criterion(outputs, inputs)  # Compare reconstructed output with the input
-
-        # Backward pass and optimize
+        loss = criterion(outputs, inputs)
         loss.backward()
         optimizer.step()
 
-        # Accumulate loss
         running_train_loss += loss.item()
 
-    # Calculate average training loss for the epoch
     avg_train_loss = running_train_loss / len(train_loader)
     train_losses.append(avg_train_loss)
 
-    # Validation phase
-    model.eval()  # Set model to evaluation mode
+    model.eval()
     running_val_loss = 0.0
     
-    with torch.no_grad():  # No gradient calculation during validation
+    with torch.no_grad():
         for val_data in val_loader:
             val_inputs, _ = val_data
             val_inputs = val_inputs.to(device)
             val_outputs = model(val_inputs)
-            val_loss = criterion(val_outputs, val_inputs)  # Compare reconstructed output with the input
+            val_loss = criterion(val_outputs, val_inputs)
             running_val_loss += val_loss.item()
 
-    # Calculate average validation loss for the epoch
     avg_val_loss = running_val_loss / len(val_loader)
     val_losses.append(avg_val_loss)
 
-    # Print average losses for each epoch
     print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
 
-    # Save the model if validation loss has decreased
     if avg_val_loss < best_val_loss:
         best_val_loss = avg_val_loss
-        torch.save(model.state_dict(), best_model_path)  # Save the best model
+        torch.save(model.state_dict(), best_model_path)
         print(f'Saved best model with validation loss: {best_val_loss:.4f}')
 
 print('Training complete')
@@ -108,7 +101,7 @@ print('Training complete')
 plt.figure(figsize=(10, 5))
 plt.plot(range(1, num_epochs + 1), train_losses, label='Training Loss', marker='o')
 plt.plot(range(1, num_epochs + 1), val_losses, label='Validation Loss', marker='o')
-plt.title('Training and Validation Losses')
+plt.title(f'Training and Validation Losses ({args.data})')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.xticks(range(1, num_epochs + 1))  
@@ -116,5 +109,5 @@ plt.legend()
 plt.grid()
 
 # Save the figure
-plt.savefig(f'results/{args.model}/training_validation_loss.png')
-plt.close()  
+plt.savefig(f'results/{args.model}/{args.data}_training_validation_loss.png')
+plt.close()
