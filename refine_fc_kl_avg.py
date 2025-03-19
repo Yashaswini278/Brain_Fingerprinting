@@ -11,11 +11,12 @@ from utils import *
 
 # Argument parsing for selecting the task
 parser = argparse.ArgumentParser(description='Functional Connectome Task Selection')
-parser.add_argument('-task', type=str, required=True, choices=['motor', 'wm', 'emotion'], help="Task to analyze: motor, wm, or emotion")
+parser.add_argument('-data', type=str, required=True, choices=['rest', 'motor', 'wm', 'emotion'], help="Data on which the model was trained: rest, motor, wm, or emotion")
+parser.add_argument('-task', type=str, required=True, choices=['rest', 'motor', 'wm', 'emotion'], help="Task to analyze: rest, motor, wm, or emotion")
 args = parser.parse_args()
 
 # Set up logging
-logging.basicConfig(filename=f'accuracy_log_{args.task}_avg.txt', level=logging.INFO, format='%(message)s', filemode='a')
+logging.basicConfig(filename=f'accuracy_log_{args.data}_to_{args.task}_avg.txt', level=logging.INFO, format='%(message)s', filemode='a')
 
 basic_parameters = parse_basic_params()
 HCP_DIR = basic_parameters['HCP_DIR']
@@ -35,11 +36,11 @@ fc_task_avg = np.repeat(fc_task_average[np.newaxis, ...], fc_task.shape[0], axis
 
 fc_task_residual = fc_task - fc_task_avg
 
-# Load rest data for comparison
-fc_rest = np.load('FC_DATA/fc_rest.npy')
+# Load train data for comparison
+fc_train = np.load(f'FC_DATA/fc_{args.data}.npy')
 
 # Correlation analysis function
-def calculate_correlation(fc_task_data, fc_rest_data):
+def calculate_correlation(fc_task_data, fc_train_data):
     return np.corrcoef(
     fc_task_data.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
     fc_rest_data.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
@@ -50,7 +51,7 @@ def calculate_correlation(fc_task_data, fc_rest_data):
 accuracy_matrix = np.zeros((14, 14))  # For K=2 to 15, and L ranging from K to 15
 
 # Loop over K and L, apply SDL, and compute accuracies
-for K in range(13, 16):
+for K in range(15, 16):
     for L in range(2, K + 1):
         # Apply SDL
         print(f'K= {K}, L = {L}')
@@ -68,7 +69,7 @@ for K in range(13, 16):
         fc_task_refined = fc_task_residual - DX
 
         # Correlation analysis between task and rest FC after SDL
-        corr_task_rest_after_sdl = calculate_correlation(fc_task_refined, fc_rest)
+        corr_task_rest_after_sdl = calculate_correlation(fc_task_refined, fc_train)
 
         # Calculate accuracy after SDL
         accuracy_after_sdl = calculate_accuracy(corr_task_rest_after_sdl) * 100  # Convert to percentage
