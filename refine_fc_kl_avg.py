@@ -24,7 +24,9 @@ N_SUBJECTS = basic_parameters['N_SUBJECTS']
 N_PARCELS = basic_parameters['N_PARCELS']
 
 # Select the appropriate functional connectome (FC) data based on the task
-if args.task == 'motor':
+if args.task == "rest":
+    fc_task = np.load('FC_DATA/fc_rest.npy')
+elif args.task == 'motor':
     fc_task = np.load('FC_DATA/fc_motor.npy')
 elif args.task == 'wm':
     fc_task = np.load('FC_DATA/fc_wm.npy')
