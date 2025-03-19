@@ -45,7 +45,7 @@ fc_train = np.load(f'FC_DATA/fc_{args.data}.npy')
 def calculate_correlation(fc_task_data, fc_train_data):
     return np.corrcoef(
     fc_task_data.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
-    fc_rest_data.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
+    fc_train_data.reshape(N_SUBJECTS, -1),  # Reshape to 2D for correlation calculation
     rowvar=True
 )[:N_SUBJECTS, N_SUBJECTS:]
 
